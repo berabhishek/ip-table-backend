@@ -10,6 +10,7 @@ var connection = mysql.createConnection({
   database: 'my_db'
 })
 
+//thiss is updated comment
 router.get("/state/:country", cors(), (req, res) => {
     connection.query(`select distinct state from offices where country in ('${req.params.country}')`, (err, rows, fields) => {
         let states = []
