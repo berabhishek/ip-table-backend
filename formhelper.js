@@ -70,4 +70,16 @@ router.get("/vrfname", cors(), (req, res) => {
     });
 });
 
+router.get("/validate/:projectname/:projectid/:vrfname", cors(), (req, res) => {
+    connection.query(`select * from projectref where projectname in ('${req.params.projectname}') and projectid in ('${req.params.projectid}') and vrfname in ('${req.params.vrfname}')`, (err, rows, callback) => {
+        let resp = false;
+        if(rows && rows.length !== 0) {
+            resp = true;
+        }
+        res.json({
+            "valid": resp
+        });
+    });
+});
+
 module.exports = router;
