@@ -59,4 +59,15 @@ router.get("/device/:device/:connectiontype", cors() , (req, res) => {
     });
 });
 
+router.get("/vrfname", cors(), (req, res) => {
+    connection.query(`select vrfname from projectref`, (err, rows, callback) => {
+        let vrfname = rows.map(row => {
+            return row['vrfname'];
+        });
+        res.json({
+            "vrfname": vrfname
+        });
+    });
+});
+
 module.exports = router;
