@@ -34,4 +34,29 @@ router.get("/office/:state", cors(), (req, res) => {
     });
 });
 
+router.get("/connectiontype", cors(), (req, res) => {
+    connection.query(`select * from connectiontype`, (err, rows, callback) => {
+        let connectiontype = rows.map(row => {
+            return row['connectiontype'];
+        });
+        res.json({
+            "connectiontype": connectiontype
+        });
+    });
+});
+
+router.get("/device/:device/:connectiontype", cors() , (req, res) => {
+    connection.query(`select name from ${req.params.device} where connectiontype in ('${req.params.connectiontype}')`, (err, rows, callback) => {
+        let devices = [];
+        if(rows){
+            devices = rows.map(row => {
+                return row['name'];
+            });
+        }
+            res.json({
+            "name": devices
+        });
+    });
+});
+
 module.exports = router;
