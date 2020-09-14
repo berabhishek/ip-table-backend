@@ -165,7 +165,7 @@ router.get("/alldata/:id", cors(), (req, res) => {
                 data.asnumber = rows[0].asnumber;
                 connection.query(`select * from connect where id in (${data.connect1}, ${data.connect2}, ${data.connect3}, ${data.connect4})`, (err, rows, fields) => {
                     rows.forEach((row, iterator) => {
-                        data[`connect${iterator}data`] = {
+                        data[`connect${iterator+1}data`] = {
                             "device1": row.device1,
                             "device2": row.device2,
                             "vlan": row.vlan,
