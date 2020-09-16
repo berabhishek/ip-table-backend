@@ -8,7 +8,8 @@ router.use(function(req, res, next) {
     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
     next();
   });
-var mysql = require('mysql')
+var mysql = require('mysql');
+const e = require('express');
 var connection = mysql.createConnection({
   host: 'localhost',
   user: 'abhishek',
@@ -87,8 +88,20 @@ router.get("/validate/:projectname/:projectid/:vrfname", cors(), (req, res) => {
         });
     });
 });
+
+router.get("/validateany/:projectname/:projectid/:vrfname", cors(), (req, res) => {
+    connection.query(`select * from projectref where projectname in ('${req.params.projectname}') or projectid in ('${req.params.projectid}') or vrfname in ('${req.params.vrfname}')`, (err, rows, callback) => {
+        let resp = true;
+        if(rows && rows.length !== 0) {
+            resp = false;
+        }
+        res.json({
+            "valid": resp
+        });
+    });
+});
 //get form data
-router.post("/setipdata", cors(), (req, res) => {
+router.post("/setipdata/:existing", cors(), (req, res) => {
     res.header("Access-Control-Allow-Origin", "*");
       res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
     //first submit the connect
@@ -137,8 +150,17 @@ router.post("/setipdata", cors(), (req, res) => {
             console.error(err);
         } else {
             //all good insert data
-            connection.query(`select * from projectref where projectname in ('${req.body.projectname}') and projectid in ('${req.body.projectid}') and vrfname in ('${req.body.vrfname}')`, (err, rows, fields) => {
-                var projid = rows[0].id;
+            let query_st = `select * from projectref where projectname in ('${req.body.projectname}') and projectid in ('${req.body.projectid}') and vrfname in ('${req.body.vrfname}')`;
+            if(req.params.existing === "new") {
+                query_st = `insert into projectref (projectname, projectid, vrfname) values ('${req.body.projectname}', '${req.body.projectid}', '${req.body.vrfname}')`; 
+            }
+            connection.query(query_st, (err, rows, fields) => {
+                var projid = null;
+                if(req.params.existing === "new") {
+                    projid = rows.insertId;
+                } else {
+                    projid = rows[0].id;
+                }
                 connection.query(`insert into iptable (region, country, city, facility, connectivitytype, projectid, connect1, connect2, connect3, connect4) values ('${req.body.region}', '${req.body.country}', '${req.body.city}', '${req.body.facility}', '${req.body.connectivitytype}', ${projid}, ${connectids[0]}, ${connectids[1]}, ${connectids[2]}, ${connectids[3]})`, (err, result) => {
                     console.error(err);
                     res.json({
