@@ -100,6 +100,35 @@ router.get("/validateany/:projectname/:projectid/:vrfname", cors(), (req, res) =
         });
     });
 });
+
+router.get("/connections/:device1/:device2/:facility", cors(), (req, res) => {
+    connection.query(`select * from parentconnections where device1 in ('${req.params.device1}') and device2 in ('${req.params.device2}') and office in ('${req.params.facility}')`, (err, rows, callback) => {
+        let resp = {
+            "subnet": "",
+            "vlan": ""
+        };
+        if(rows && rows.length !== 0) {
+            let row = rows[0];
+            resp.subnet = row.parent_subnet;
+            connection.query(`select * from childsubnet where parent_subnet='${resp.subnet}' and project = 'FREE'`, (err, rows, callback) => {
+                if(rows && rows.length !== 0) {
+                    resp.subnet = rows[0].child_subnet;
+                    connection.query(`select * from childvlan where vlan <= ${row.vlan_max} and vlan >= ${row.vlan_min} and project = 'FREE'`, (err, rows, callback) => {
+                        if(rows && rows.length !== 0) {
+                            resp.vlan = rows[0].vlan;
+                        }
+                        res.json(resp);
+                    });
+                } else {
+                    res.json(resp);
+                }
+            });
+        } else {
+            res.json(resp);
+        }
+    });
+});
+
 //get form data
 router.post("/setipdata/:existing", cors(), (req, res) => {
     res.header("Access-Control-Allow-Origin", "*");
@@ -161,6 +190,25 @@ router.post("/setipdata/:existing", cors(), (req, res) => {
                 } else {
                     projid = rows[0].id;
                 }
+                let vlans = [-1, -1, -1, -1];
+                vlans[0] = req.body.vlan_1 ? req.body.vlan_1: -1;
+                vlans[1] = req.body.vlan_2 ? req.body.vlan_2: -1;
+                vlans[2] = req.body.vlan_3 ? req.body.vlan_3: -1;
+                vlans[3] = req.body.vlan_4 ? req.body.vlan_4: -1;
+                let vlan_query = `update childvlan set project='${req.body.projectname}' where vlan = ${vlans[0]} or vlan = ${vlans[1]} or vlan = ${vlans[2]} or vlan = ${vlans[3]}`;
+                connection.query( vlan_query,(err, rows, fields) => {
+                });
+
+                let child_subnets = ['','','',''];
+                child_subnets[0] = req.body.subnet_1;
+                child_subnets[1] = req.body.subnet_2;
+                child_subnets[2] = req.body.subnet_3;
+                child_subnets[3] = req.body.subnet_4;
+
+                let subnet_query = `update childsubnet set project='${req.body.projectname}' where child_subnet = '${child_subnets[0]}' or child_subnet = '${child_subnets[1]}' or child_subnet = '${child_subnets[2]}' or child_subnet = '${child_subnets[3]}'`;
+                connection.query( subnet_query,(err, rows, fields) => {
+                });
+
                 connection.query(`insert into iptable (region, country, city, facility, connectivitytype, projectid, connect1, connect2, connect3, connect4) values ('${req.body.region}', '${req.body.country}', '${req.body.city}', '${req.body.facility}', '${req.body.connectivitytype}', ${projid}, ${connectids[0]}, ${connectids[1]}, ${connectids[2]}, ${connectids[3]})`, (err, result) => {
                     console.error(err);
                     res.json({
